@@ -8,6 +8,5 @@ object PingPongApp {
     PongActor.main(Seq("2552").toArray)
     PongActor.main(Array.empty)
     PingActor.main(Array.empty)
-
   }
 }

@@ -1,6 +1,5 @@
 package sample.pingpong
 
-
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 import sample.pingpong.PingActor.Ping

@@ -16,18 +16,22 @@ import scala.concurrent.Await
 class PingActor() extends Actor with ActorLogging {
 
   import PingActor._
-  val pong = context.actorOf(FromConfig.props(),
+  val pong = context.actorOf(FromConfig.props(Props[PongActor]),
     name = "pongActorRouter")
+  implicit val executionContext = context.dispatcher
 
   override def preStart(): Unit = {
-    pong ! Ping
+    sendJobs
     context.setReceiveTimeout(10.seconds)
   }
 
   def receive = {
-    case Pong => println(s"${self.path} received Ping")
-//      pong ! Ping
+    case Pong => println(s"${self.path} received Pong")
     case ReceiveTimeout => log.info("Timeout")
+  }
+
+  def sendJobs: Unit = {
+    context.system.scheduler.schedule(1.second,5.second)(pong ! Ping)
   }
 }
 
