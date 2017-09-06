@@ -9,14 +9,14 @@ class PongActor extends Actor with ActorLogging {
   import PongActor._
 
   def receive = {
-    case Ping => println(s"${self.path} received Ping")
-      sender() ! Pong
+    case ping @ Ping(n) => println(s"${self.path} received $ping")
+      sender() ! Pong(n)
   }
 }
 
 object PongActor {
 
-  case object Pong
+  case class Pong(number: Int)
 
   def main(args: Array[String]): Unit = {
     // Override the configuration of the port when specified as program argument

@@ -13,7 +13,7 @@ import PongActor.Pong
 import scala.util.Try
 import scala.concurrent.Await
 
-class PingActor() extends Actor with ActorLogging {
+class PingActor(upToN: Int,repeat: Boolean) extends Actor with ActorLogging {
 
   import PingActor._
   val pong = context.actorOf(FromConfig.props(Props[PongActor]),
@@ -22,22 +22,32 @@ class PingActor() extends Actor with ActorLogging {
 
   override def preStart(): Unit = {
     sendJobs
-    context.setReceiveTimeout(10.seconds)
+    if(repeat) {
+      context.setReceiveTimeout(10 seconds)
+    }
   }
 
   def receive = {
-    case Pong => println(s"${self.path} received Pong")
-    case ReceiveTimeout => log.info("Timeout")
+    case pong @ Pong(n) =>
+      println(s"${self.path} received $pong")
+      if( n == upToN ) {
+        if (repeat) sendJobs
+        else context.stop(self)
+      }
+    case ReceiveTimeout =>
+      log.info("Timeout")
+      sendJobs
   }
 
   def sendJobs: Unit = {
-    context.system.scheduler.schedule(1.second,5.second)(pong ! Ping)
+    1 to upToN foreach (n => pong ! Ping(n))
+    //context.system.scheduler.schedule(1.second,5.second)(pong ! Ping)
   }
 }
 
 object PingActor {
-  case object Ping
-
+  case class Ping(number: Int)
+  val upToN = 6
   def main(args: Array[String]): Unit = {
 
     val config = ConfigFactory.parseString("akka.cluster.roles = [frontend]").
@@ -46,7 +56,7 @@ object PingActor {
     val system = ActorSystem("ClusterSystem", config)
 
     Cluster(system) registerOnMemberUp {
-      system.actorOf(Props[PingActor], name = "pingActor")
+      system.actorOf(Props(classOf[PingActor],upToN,true), name = "pingActor")
     }
 
     Cluster(system).registerOnMemberRemoved {
